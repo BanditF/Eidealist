@@ -48,25 +48,6 @@ install_pkg() {
   fi
 }
 
-# Package installation helper
-install_pkg() {
-  local pkg="$1"
-  if command -v pacman &> /dev/null; then
-    sudo pacman -S --noconfirm "$pkg"
-  elif command -v apt-get &> /dev/null; then
-    sudo apt-get update && sudo apt-get install -y "$pkg"
-  elif command -v dnf &> /dev/null; then
-    sudo dnf install -y "$pkg"
-  elif command -v yum &> /dev/null; then
-    sudo yum install -y "$pkg"
-  elif command -v zypper &> /dev/null; then
-    sudo zypper install -y "$pkg"
-  else
-    echo "Error: no supported package manager (pacman, apt, dnf, yum, zypper) found."
-    return 1
-  fi
-}
-
 # Check and install git if not present
 if ! command -v git &> /dev/null; then
   echo "git not found. Attempting to install git..."
@@ -113,7 +94,7 @@ fi
 
 # Attempt to install yq for enhanced profile dependency processing
 echo "Attempting to install yq for enhanced profile dependency processing..."
-if ! install_package yq; then
+if ! install_pkg yq; then
   echo "Warning: yq installation failed or was skipped (OS: $OS_FAMILY)."
   echo "Automatic dependency checking by the 'shadow' script might be skipped if yq is not found."
   echo "You can try installing yq manually later (e.g., 'sudo pacman -S yq', 'sudo apt-get install yq', 'brew install yq')."
