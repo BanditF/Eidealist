@@ -1,79 +1,17 @@
 #!/bin/bash
 
-# --- Global Variables ---
-OS_FAMILY="unknown"
-
-# --- OS Detection Function ---
-detect_os() {
-  echo "Detecting operating system..."
-  if [ -f /etc/os-release ]; then
-    . /etc/os-release
-    if [[ "$ID" == "arch" || "$ID_LIKE" == "arch" ]]; then
-      OS_FAMILY="arch"
-    elif [[ "$ID" == "debian" || "$ID_LIKE" == "debian" || "$ID" == "ubuntu" || "$ID_LIKE" == "ubuntu" ]]; then
-      OS_FAMILY="debian"
-    elif [[ "$ID" == "fedora" || "$ID_LIKE" == "fedora" ]]; then
-      OS_FAMILY="fedora"
-    else
-      OS_FAMILY="unknown" # Fallback for other Linux with /etc/os-release
-    fi
-  elif [[ "$(uname)" == "Darwin" ]]; then
-    OS_FAMILY="macos"
-  else
-    OS_FAMILY="unknown"
-  fi
-  echo "OS Family detected: $OS_FAMILY"
-}
-
-# --- Package Installation Function ---
-install_package() {
-  if [ "$#" -eq 0 ]; then
-    echo "Usage: install_package <package_name> [<package_name>...]"
-    return 1
-  fi
-
-  local pkgs_to_install=("$@")
-  echo "Attempting to install: ${pkgs_to_install[*]}"
-
-  case "$OS_FAMILY" in
-    "arch")
-      sudo pacman -S --noconfirm "${pkgs_to_install[@]}"
-      ;;
-    "debian")
-      sudo apt-get update && sudo apt-get install -y "${pkgs_to_install[@]}"
-      ;;
-    "fedora")
-      sudo dnf install -y "${pkgs_to_install[@]}"
-      ;;
-    "macos")
-      if ! command -v brew &> /dev/null; then
-        echo "Error: Homebrew (brew) not found. Please install Homebrew first."
-        echo "Visit https://brew.sh for installation instructions."
-        return 1 # Indicate failure to install dependency
-      fi
-      brew install "${pkgs_to_install[@]}"
-      ;;
-    "unknown")
-      echo "OS family is unknown or not supported by this script for automatic package installation."
-      echo "Please install the following packages manually: ${pkgs_to_install[*]}"
-      return 1 # Indicate failure due to unknown OS
-      ;;
-    *)
-      echo "Internal error: Unknown OS_FAMILY '$OS_FAMILY'"
-      return 1
-      ;;
-  esac
-
-  if [ $? -ne 0 ]; then
-    echo "Error: Package installation failed for: ${pkgs_to_install[*]}"
-    return 1
-  fi
-  echo "Successfully initiated installation for: ${pkgs_to_install[*]}"
-  return 0
-}
+# Source utility functions
+UTILS_SCRIPT_PATH="$(dirname "$0")/lib/utils.sh" # Assuming lib is in the same dir as bootstrap
+if [ -f "$UTILS_SCRIPT_PATH" ]; then
+    # shellcheck source=lib/utils.sh
+    source "$UTILS_SCRIPT_PATH"
+else
+    echo "Error: Utilities script not found at $UTILS_SCRIPT_PATH"
+    exit 1
+fi
 
 # --- Early Operations ---
-detect_os # Detect OS early
+detect_os # Detect OS early. This function is now sourced from utils.sh
 
 # --- Advanced Environment Detection (Future Enhancement) ---
 # DETECTED_SHELL="" # e.g., bash, zsh
@@ -127,6 +65,22 @@ if ! command -v chezmoi &> /dev/null; then
   echo "chezmoi should now be installed."
 else
   echo "chezmoi is already installed."
+fi
+
+# Attempt to install yq for enhanced profile dependency processing
+echo "Attempting to install yq for enhanced profile dependency processing..."
+if ! install_package yq; then
+  echo "Warning: yq installation failed or was skipped (OS: $OS_FAMILY)."
+  echo "Automatic dependency checking by the 'shadow' script might be skipped if yq is not found."
+  echo "You can try installing yq manually later (e.g., 'sudo pacman -S yq', 'sudo apt-get install yq', 'brew install yq')."
+  # Do not exit here, yq is an enhancement
+else
+  if command -v yq &> /dev/null; then
+    echo "yq installed successfully or was already present."
+  else
+    echo "Warning: yq installation was reported as successful by package manager, but 'yq' command is still not found."
+    echo "Automatic dependency checking by the 'shadow' script may be affected."
+  fi
 fi
 
 # --- Configuration ---
