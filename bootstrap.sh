@@ -159,11 +159,8 @@ else
 fi
 
 echo "Executing: $SHADOW_CMD walk $PROFILE_NAME"
-# Call the shadow script to apply the profile
-# The shadow script itself will handle chezmoi logic
-"$SHADOW_CMD" walk "$PROFILE_NAME"
-
-if [ $? -eq 0 ]; then
+# Call the shadow script to apply the profile and check the result directly
+if "$SHADOW_CMD" walk "$PROFILE_NAME"; then
   echo "Bootstrap process completed for profile: $PROFILE_NAME"
 else
   echo "Bootstrap process failed for profile: $PROFILE_NAME"
