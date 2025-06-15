@@ -48,6 +48,25 @@ install_pkg() {
   fi
 }
 
+# Package installation helper
+install_pkg() {
+  local pkg="$1"
+  if command -v pacman &> /dev/null; then
+    sudo pacman -S --noconfirm "$pkg"
+  elif command -v apt-get &> /dev/null; then
+    sudo apt-get update && sudo apt-get install -y "$pkg"
+  elif command -v dnf &> /dev/null; then
+    sudo dnf install -y "$pkg"
+  elif command -v yum &> /dev/null; then
+    sudo yum install -y "$pkg"
+  elif command -v zypper &> /dev/null; then
+    sudo zypper install -y "$pkg"
+  else
+    echo "Error: no supported package manager (pacman, apt, dnf, yum, zypper) found."
+    return 1
+  fi
+}
+
 # Check and install git if not present
 if ! command -v git &> /dev/null; then
   echo "git not found. Attempting to install git..."
@@ -57,11 +76,13 @@ if ! command -v git &> /dev/null; then
   else
     echo "Error: git installation failed. Please install git manually and re-run."
 
+
     exit 1
   fi
   # Verify after attempting install
   if ! command -v git &> /dev/null; then
     echo "Error: git still not found after attempting installation. Please check for errors above and install git manually."
+
     exit 1
   fi
   echo "git should now be installed."
