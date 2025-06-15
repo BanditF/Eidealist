@@ -36,15 +36,16 @@ install_package() {
   local pkgs_to_install=("$@")
   echo "Attempting to install: ${pkgs_to_install[*]}"
 
+  local exit_code=0
   case "$OS_FAMILY" in
     "arch")
-      sudo pacman -S --noconfirm "${pkgs_to_install[@]}"
+      sudo pacman -S --noconfirm "${pkgs_to_install[@]}" || exit_code=$?
       ;;
     "debian")
-      sudo apt-get update && sudo apt-get install -y "${pkgs_to_install[@]}"
+      sudo apt-get update && sudo apt-get install -y "${pkgs_to_install[@]}" || exit_code=$?
       ;;
     "fedora")
-      sudo dnf install -y "${pkgs_to_install[@]}"
+      sudo dnf install -y "${pkgs_to_install[@]}" || exit_code=$?
       ;;
     "macos")
       if ! command -v brew &> /dev/null; then
@@ -52,7 +53,7 @@ install_package() {
         echo "Visit https://brew.sh for installation instructions."
         return 1 # Indicate failure to install dependency
       fi
-      brew install "${pkgs_to_install[@]}"
+      brew install "${pkgs_to_install[@]}" || exit_code=$?
       ;;
     "unknown")
       echo "OS family is unknown or not supported by this script for automatic package installation."
@@ -65,7 +66,7 @@ install_package() {
       ;;
   esac
 
-  if [ $? -ne 0 ]; then
+  if [ $exit_code -ne 0 ]; then
     echo "Error: Package installation failed for: ${pkgs_to_install[*]}"
     return 1
   fi
