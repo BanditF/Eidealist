@@ -1,19 +1,110 @@
 #!/bin/bash
 
+# --- Global Variables ---
+OS_FAMILY="unknown"
+
+# --- OS Detection Function ---
+detect_os() {
+  echo "Detecting operating system..."
+  if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    if [[ "$ID" == "arch" || "$ID_LIKE" == "arch" ]]; then
+      OS_FAMILY="arch"
+    elif [[ "$ID" == "debian" || "$ID_LIKE" == "debian" || "$ID" == "ubuntu" || "$ID_LIKE" == "ubuntu" ]]; then
+      OS_FAMILY="debian"
+    elif [[ "$ID" == "fedora" || "$ID_LIKE" == "fedora" ]]; then
+      OS_FAMILY="fedora"
+    else
+      OS_FAMILY="unknown" # Fallback for other Linux with /etc/os-release
+    fi
+  elif [[ "$(uname)" == "Darwin" ]]; then
+    OS_FAMILY="macos"
+  else
+    OS_FAMILY="unknown"
+  fi
+  echo "OS Family detected: $OS_FAMILY"
+}
+
+# --- Package Installation Function ---
+install_package() {
+  if [ "$#" -eq 0 ]; then
+    echo "Usage: install_package <package_name> [<package_name>...]"
+    return 1
+  fi
+
+  local pkgs_to_install=("$@")
+  echo "Attempting to install: ${pkgs_to_install[*]}"
+
+  case "$OS_FAMILY" in
+    "arch")
+      sudo pacman -S --noconfirm "${pkgs_to_install[@]}"
+      ;;
+    "debian")
+      sudo apt-get update && sudo apt-get install -y "${pkgs_to_install[@]}"
+      ;;
+    "fedora")
+      sudo dnf install -y "${pkgs_to_install[@]}"
+      ;;
+    "macos")
+      if ! command -v brew &> /dev/null; then
+        echo "Error: Homebrew (brew) not found. Please install Homebrew first."
+        echo "Visit https://brew.sh for installation instructions."
+        return 1 # Indicate failure to install dependency
+      fi
+      brew install "${pkgs_to_install[@]}"
+      ;;
+    "unknown")
+      echo "OS family is unknown or not supported by this script for automatic package installation."
+      echo "Please install the following packages manually: ${pkgs_to_install[*]}"
+      return 1 # Indicate failure due to unknown OS
+      ;;
+    *)
+      echo "Internal error: Unknown OS_FAMILY '$OS_FAMILY'"
+      return 1
+      ;;
+  esac
+
+  if [ $? -ne 0 ]; then
+    echo "Error: Package installation failed for: ${pkgs_to_install[*]}"
+    return 1
+  fi
+  echo "Successfully initiated installation for: ${pkgs_to_install[*]}"
+  return 0
+}
+
+# --- Early Operations ---
+detect_os # Detect OS early
+
+# --- Advanced Environment Detection (Future Enhancement) ---
+# DETECTED_SHELL="" # e.g., bash, zsh
+# DETECTED_DE=""    # e.g., kde, gnome, hyprland
+# DETECTED_HOSTNAME="$(hostname)"
+
+# Placeholder for logic to detect shell
+# if [ -n "$SHELL" ]; then DETECTED_SHELL=$(basename "$SHELL"); fi
+# echo "Detected Shell: $DETECTED_SHELL (to be implemented)"
+
+# Placeholder for logic to detect DE (more complex)
+# echo "Detected DE: $DETECTED_DE (to be implemented)"
+
+# echo "Detected Hostname: $DETECTED_HOSTNAME"
+
 # Check and install git if not present
 if ! command -v git &> /dev/null; then
   echo "git not found. Attempting to install git..."
-  if command -v pacman &> /dev/null; then
-    sudo pacman -S --noconfirm git
-    if ! command -v git &> /dev/null; then
-      echo "Error: git installation failed via pacman. Please install git manually and re-run."
-      exit 1
+  if ! install_package git; then
+    echo "Error: git installation failed or was skipped due to unknown OS."
+    if [ "$OS_FAMILY" == "unknown" ]; then
+        echo "Please install git manually and re-run."
     fi
-    echo "git installed successfully via pacman."
-  else
-    echo "Error: pacman not found. Cannot install git. Please install git manually and re-run."
     exit 1
   fi
+  # Verify after attempting install
+  if ! command -v git &> /dev/null; then
+    echo "Error: git still not found after attempting installation. Please check for errors above and install git manually."
+    exit 1
+  fi
+  echo "git should now be installed."
 else
   echo "git is already installed."
 fi
@@ -21,24 +112,27 @@ fi
 # Check and install chezmoi if not present
 if ! command -v chezmoi &> /dev/null; then
   echo "chezmoi not found. Attempting to install chezmoi..."
-  if command -v pacman &> /dev/null; then
-    sudo pacman -S --noconfirm chezmoi
-    if ! command -v chezmoi &> /dev/null; then
-      echo "Error: chezmoi installation failed via pacman. Please install chezmoi manually and re-run."
-      exit 1
+  if ! install_package chezmoi; then
+    echo "Error: chezmoi installation failed or was skipped due to unknown OS."
+    if [ "$OS_FAMILY" == "unknown" ]; then
+        echo "Please install chezmoi manually and re-run."
     fi
-    echo "chezmoi installed successfully via pacman."
-  else
-    echo "Error: pacman not found. Cannot install chezmoi. Please install chezmoi manually and re-run."
     exit 1
   fi
+  # Verify after attempting install
+  if ! command -v chezmoi &> /dev/null; then
+    echo "Error: chezmoi still not found after attempting installation. Please check for errors above and install chezmoi manually."
+    exit 1
+  fi
+  echo "chezmoi should now be installed."
 else
   echo "chezmoi is already installed."
 fi
 
 # --- Configuration ---
 DEFAULT_PROFILE="base"
-PREDEFINED_REPO_URL="https://github.com/user/repo.git" # Placeholder
+# TODO: Replace this with your repository's URL or implement dynamic configuration.
+PREDEFINED_REPO_URL="https://github.com/username/repository.git" # Placeholder
 
 # --- Helper Functions ---
 usage() {
