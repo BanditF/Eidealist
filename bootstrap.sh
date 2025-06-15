@@ -1,12 +1,19 @@
 #!/bin/bash
+set -euo pipefail
 
-# Placeholder for package installation
-# Add commands to install git and chezmoi here
-echo "Simulating package installation (git, chezmoi)..."
+# Basic package installation
+if command -v apt-get >/dev/null; then
+    sudo apt-get update
+    sudo apt-get install -y git chezmoi
+elif command -v pacman >/dev/null; then
+    sudo pacman -Sy --noconfirm git chezmoi
+else
+    echo "Please install git and chezmoi manually." >&2
+fi
 
 # --- Configuration ---
 DEFAULT_PROFILE="base"
-PREDEFINED_REPO_URL="https://github.com/user/repo.git" # Placeholder
+PREDEFINED_REPO_URL="https://github.com/example/eidealist.git" # Placeholder
 
 # --- Helper Functions ---
 usage() {
@@ -81,9 +88,7 @@ fi
 echo "Executing: $SHADOW_CMD walk $PROFILE_NAME"
 # Call the shadow script to apply the profile
 # The shadow script itself will handle chezmoi logic
-"$SHADOW_CMD" walk "$PROFILE_NAME"
-
-if [ $? -eq 0 ]; then
+if "$SHADOW_CMD" walk "$PROFILE_NAME"; then
   echo "Bootstrap process completed for profile: $PROFILE_NAME"
 else
   echo "Bootstrap process failed for profile: $PROFILE_NAME"

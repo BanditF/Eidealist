@@ -17,8 +17,8 @@ This project provides a modular and portable system for managing dotfiles and en
 
 1.  **Clone the repository (if not done by bootstrap):**
     ```bash
-    git clone <repository_url>
-    cd <repository_name>
+    git clone https://github.com/example/eidealist.git
+    cd eidealist
     ```
 2.  **Run the bootstrap script (optional, for new systems):**
     ```bash
@@ -36,6 +36,10 @@ Each profile in `profiles/` can contain:
 *   Dotfiles (e.g., `.bashrc`, `.config/nvim/init.lua`) that will be symlinked to your home directory by `chezmoi`.
 *   `packages.txt`: A list of packages to be installed for that profile. (Package installation logic is primarily handled by `bootstrap.sh` or manually by the user for now).
 *   `profile.yml`: Metadata about the profile, like its name and description.
+
+The `base` profile includes example `.bashrc` and `.zshrc` files showing simple
+aliases, colorized grep, a custom prompt, and how to extend your `PATH`. Use
+these files as a template for building your own configurations.
 
 ## Underlying Tooling
 
