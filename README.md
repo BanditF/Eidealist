@@ -10,6 +10,7 @@ This project provides a modular and portable system for managing dotfiles and en
         *   `--add`: Layers the new profile onto the existing configuration.
         *   `--dry-run`: Shows what changes would be made without applying them.
         *   `--force`: Overwrites existing configurations without prompting.
+        *   `--no-deps`: Skip automatic checking and installation of package dependencies defined in `profile.yml`.
 *   **`bootstrap.sh`**: A script to set up the system on a new machine. It can install essential packages, clone this repository, and apply an initial profile.
     *   `./bootstrap.sh --profile <profile_name>`: Bootstraps the system and applies the given profile.
 
@@ -34,8 +35,21 @@ This project provides a modular and portable system for managing dotfiles and en
 
 Each profile in `profiles/` can contain:
 *   Dotfiles (e.g., `.bashrc`, `.config/nvim/init.lua`) that will be symlinked to your home directory by `chezmoi`.
-*   `packages.txt`: A list of packages to be installed for that profile. (Package installation logic is primarily handled by `bootstrap.sh` or manually by the user for now).
-*   `profile.yml`: Metadata about the profile, like its name and description.
+*   `packages.txt`: A list of packages to be installed for that profile. (Note: This is a legacy way of listing packages. For automatic installation via `shadow walk`, use `profile.yml` as described below).
+*   `profile.yml`: Metadata about the profile, like its name, description, and package dependencies.
+    *   **Dependency Management**: The `shadow walk` command can automatically check and install package dependencies if they are specified in `profile.yml` and `yq` (a YAML parser) is installed. The `bootstrap.sh` script now attempts to install `yq` for this purpose.
+    *   Dependencies are listed under the `dependencies.packages` key.
+    *   Example `profile.yml` with dependencies:
+        ```yaml
+        name: My Zsh Profile
+        description: Sets up Zsh and essential tools.
+        dependencies:
+          packages:
+            - zsh
+            - git
+            - curl
+            - exa # A modern replacement for ls
+        ```
 
 ## Underlying Tooling
 

@@ -1,2 +1,8 @@
 name: Base
 description: Base configuration for all systems. Includes common aliases, editor settings, and essential tools.
+dependencies:
+  packages:
+    - zsh
+    - neovim
+    - tmux
+    - git
