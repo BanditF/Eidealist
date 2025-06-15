@@ -2,7 +2,8 @@
 set -euo pipefail
 
 # Source utility functions
-UTILS_SCRIPT_PATH="$(dirname "$0")/lib/utils.sh" # Assuming lib is in the same dir as bootstrap
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+UTILS_SCRIPT_PATH="$SCRIPT_DIR/lib/utils.sh"
 if [ -f "$UTILS_SCRIPT_PATH" ]; then
     # shellcheck source=lib/utils.sh
     source "$UTILS_SCRIPT_PATH"
