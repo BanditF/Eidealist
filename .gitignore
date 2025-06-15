@@ -1,0 +1,17 @@
+# Ignore shell profile history
+.profile-history
+
+# Ignore log files and directories
+*.log
+*.log.*
+logs/
+log/
+
+# Temporary/backup files
+*.tmp
+*.swp
+*~
+*.bak
+
+# OS-generated files
+.DS_Store

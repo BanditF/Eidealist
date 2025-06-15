@@ -1,2 +1,8 @@
 name: Hyprland
 description: Configuration specific to the Hyprland window manager. Includes Wayland utilities and theming.
+dependencies:
+  packages:
+    - hyprland
+    - waybar
+    - wofi # common alternative to rofi for wayland
+    - kitty # a common terminal for hyprland
