@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
 # Source utility functions
 UTILS_SCRIPT_PATH="$(dirname "$0")/lib/utils.sh" # Assuming lib is in the same dir as bootstrap
