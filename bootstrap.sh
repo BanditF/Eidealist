@@ -1,8 +1,40 @@
 #!/bin/bash
 
-# Placeholder for package installation
-# Add commands to install git and chezmoi here
-echo "Simulating package installation (git, chezmoi)..."
+# Check and install git if not present
+if ! command -v git &> /dev/null; then
+  echo "git not found. Attempting to install git..."
+  if command -v pacman &> /dev/null; then
+    sudo pacman -S --noconfirm git
+    if ! command -v git &> /dev/null; then
+      echo "Error: git installation failed via pacman. Please install git manually and re-run."
+      exit 1
+    fi
+    echo "git installed successfully via pacman."
+  else
+    echo "Error: pacman not found. Cannot install git. Please install git manually and re-run."
+    exit 1
+  fi
+else
+  echo "git is already installed."
+fi
+
+# Check and install chezmoi if not present
+if ! command -v chezmoi &> /dev/null; then
+  echo "chezmoi not found. Attempting to install chezmoi..."
+  if command -v pacman &> /dev/null; then
+    sudo pacman -S --noconfirm chezmoi
+    if ! command -v chezmoi &> /dev/null; then
+      echo "Error: chezmoi installation failed via pacman. Please install chezmoi manually and re-run."
+      exit 1
+    fi
+    echo "chezmoi installed successfully via pacman."
+  else
+    echo "Error: pacman not found. Cannot install chezmoi. Please install chezmoi manually and re-run."
+    exit 1
+  fi
+else
+  echo "chezmoi is already installed."
+fi
 
 # --- Configuration ---
 DEFAULT_PROFILE="base"
