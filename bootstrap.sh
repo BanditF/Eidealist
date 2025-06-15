@@ -29,14 +29,34 @@ detect_os # Detect OS early. This function is now sourced from utils.sh
 
 # echo "Detected Hostname: $DETECTED_HOSTNAME"
 
+# Package installation helper
+install_pkg() {
+  local pkg="$1"
+  if command -v pacman &> /dev/null; then
+    sudo pacman -S --noconfirm "$pkg"
+  elif command -v apt-get &> /dev/null; then
+    sudo apt-get update && sudo apt-get install -y "$pkg"
+  elif command -v dnf &> /dev/null; then
+    sudo dnf install -y "$pkg"
+  elif command -v yum &> /dev/null; then
+    sudo yum install -y "$pkg"
+  elif command -v zypper &> /dev/null; then
+    sudo zypper install -y "$pkg"
+  else
+    echo "Error: no supported package manager (pacman, apt, dnf, yum, zypper) found."
+    return 1
+  fi
+}
+
 # Check and install git if not present
 if ! command -v git &> /dev/null; then
   echo "git not found. Attempting to install git..."
-  if ! install_package git; then
-    echo "Error: git installation failed or was skipped due to unknown OS."
-    if [ "$OS_FAMILY" == "unknown" ]; then
-        echo "Please install git manually and re-run."
-    fi
+
+  if install_pkg git; then
+    echo "git installed successfully."
+  else
+    echo "Error: git installation failed. Please install git manually and re-run."
+
     exit 1
   fi
   # Verify after attempting install
@@ -52,11 +72,12 @@ fi
 # Check and install chezmoi if not present
 if ! command -v chezmoi &> /dev/null; then
   echo "chezmoi not found. Attempting to install chezmoi..."
-  if ! install_package chezmoi; then
-    echo "Error: chezmoi installation failed or was skipped due to unknown OS."
-    if [ "$OS_FAMILY" == "unknown" ]; then
-        echo "Please install chezmoi manually and re-run."
-    fi
+
+  if install_pkg chezmoi; then
+    echo "chezmoi installed successfully."
+  else
+    echo "Error: chezmoi installation failed. Please install chezmoi manually and re-run."
+
     exit 1
   fi
   # Verify after attempting install
@@ -131,13 +152,38 @@ if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
   echo "Running inside a git repository. Using current directory as dotfiles repository."
   DOTFILES_DIR="$(pwd)"
 else
-  echo "Not running inside a git repository. Cloning predefined repository."
-  # For now, just set the path, actual cloning will be part of chezmoi init
-  DOTFILES_DIR="$HOME/.local/share/chezmoi" # Default chezmoi source path
-  echo "Simulating git clone $PREDEFINED_REPO_URL to $DOTFILES_DIR"
-  # In a real scenario, you'd clone here if not using chezmoi's init --apply
+  echo "Not running inside a git repository. Initializing with chezmoi..."
+  chezmoi init --apply "$PREDEFINED_REPO_URL"
+  DOTFILES_DIR="$HOME/.local/share/chezmoi" # Default chezmoi source path after init
 fi
 echo "Dotfiles directory set to: $DOTFILES_DIR"
+
+# --- Environment Detection ---
+HOSTNAME="$(hostname)"
+SHELL_NAME="$(basename "$SHELL")"
+DESKTOP_ENV="${XDG_CURRENT_DESKTOP:-unknown}"
+OS_NAME="unknown"
+OS_ID="unknown"
+if [ -f /etc/os-release ]; then
+  # shellcheck disable=SC1091
+  . /etc/os-release
+  OS_NAME="$NAME"
+  OS_ID="$ID"
+fi
+
+echo "Detected hostname: $HOSTNAME"
+echo "Detected shell: $SHELL_NAME"
+echo "Detected desktop environment: $DESKTOP_ENV"
+echo "Detected OS: $OS_NAME ($OS_ID)"
+
+# Auto-select profile if user did not specify a different one
+if [ "$PROFILE_NAME" = "$DEFAULT_PROFILE" ]; then
+  if echo "$DESKTOP_ENV" | grep -qi 'kde'; then
+    PROFILE_NAME="kde"
+  elif echo "$DESKTOP_ENV" | grep -qi 'hyprland'; then
+    PROFILE_NAME="hyprland"
+  fi
+fi
 
 
 # --- Call shadow script ---
@@ -161,7 +207,10 @@ else
 fi
 
 echo "Executing: $SHADOW_CMD walk $PROFILE_NAME"
-# Call the shadow script to apply the profile and check the result directly
+
+# Call the shadow script to apply the profile
+# The shadow script itself will handle chezmoi logic
+
 if "$SHADOW_CMD" walk "$PROFILE_NAME"; then
   echo "Bootstrap process completed for profile: $PROFILE_NAME"
 else
