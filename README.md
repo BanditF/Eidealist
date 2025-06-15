@@ -10,7 +10,7 @@ This project provides a modular and portable system for managing dotfiles and en
         *   `--add`: Layers the new profile onto the existing configuration.
         *   `--dry-run`: Shows what changes would be made without applying them.
         *   `--force`: Overwrites existing configurations without prompting.
-*   **`bootstrap.sh`**: A script to set up the system on a new machine. It can install essential packages, clone this repository, and apply an initial profile.
+*   **`bootstrap.sh`**: A script to set up the system on a new machine. It can install essential packages (supports `pacman`, `apt`, `dnf/yum`, and `zypper`), clone this repository, detect the environment (hostname, shell, desktop environment, OS), and apply an initial profile. If no profile is specified, it attempts to auto-select one based on the detected desktop environment.
     *   `./bootstrap.sh --profile <profile_name>`: Bootstraps the system and applies the given profile.
 
 ## Getting Started
